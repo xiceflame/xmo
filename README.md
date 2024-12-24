@@ -34,7 +34,7 @@ XMO Pipeline 是一个基于动作捕捉的动作评价系统。该系统通过�
 #### 1. PoseSkeleton
 动作捕捉和骨骼数据处理模块
 
-**组件说明：**
+**核心组件：**
 - `source.py`: 统一数据源接口
   * 支持视频输入
   * 支持摄像头输入
@@ -44,6 +44,21 @@ XMO Pipeline 是一个基于动作捕捉的动作评价系统。该系统通过�
   * MediaPipe检测器
   * OpenPose检测器（规划中）
   * 自定义检测器扩展支持
+
+- `loader.py`: 通用数据加载器
+  * 基础加载功能
+  * 数据验证
+  * 错误处理
+
+- `expert_loader.py`: 专家数据加载器
+  * Parquet文件加载
+  * 视频文件处理
+  * 数据质量控制
+
+- `student_loader.py`: 学员数据加载器
+  * 实时视频流处理
+  * 实时数据验证
+  * 性能优化处理
 
 - `data_format.py`: 数据格式管理
   * 统一的格式转换入口
@@ -56,6 +71,38 @@ XMO Pipeline 是一个基于动作捕捉的动作评价系统。该系统通过�
   * JSON格式：Web交互标准格式
   * CSV格式：数据分析标准格式
   * MediaPipe格式：实时检测输出格式
+
+### 姿势评价数据流程
+
+```
+[专家数据]                                [学员数据]
+    |                                        |
+    v                                        v
+[pose_skeleton]                        [pose_skeleton]
+    |                                        |
+    v                                        v
+[Skeleton/SkeletonSequence]    [Skeleton/SkeletonSequence]
+    |                                        |
+    v                                        v
+[to_normalized_format()]           [to_normalized_format()]
+    |                                        |
+    v                                        v
+[pose_normalization]              [pose_normalization]
+    |                                        |
+    v                                        v
+[update_from_normalized()]        [update_from_normalized()]
+    |                                        |
+    v                                        v
+[标准化后的专家骨骼]                [标准化后的学员骨骼]
+    |                                        |
+    +----------------+  +-------------------+
+                     |  |
+                     v  v
+              [姿势评价系统]
+                     |
+                     v
+              [评分和反馈]
+```
 
 #### 2. PoseNormalization
 姿势标准化处理模块
@@ -138,45 +185,6 @@ normalized_frame = normalizer.normalize_frame(frame)
 # 处理序列数据
 normalized_sequence = normalizer.normalize_sequence(sequence)
 ```
-
-**标准化效果：**
-
-1. 位置标准化
-   - 消除位置偏移
-   - 统一运动范围
-   - 减少抖动干扰
-
-2. 旋转标准化
-   - 统一动作方向
-   - 修正姿势倾斜
-   - 平滑旋转变化
-
-3. 深度标准化
-   - 统一深度范围
-   - 修正前后倾斜
-   - 改善深度感知
-
-4. 尺度标准化
-   - 统一骨骼比例
-   - 修正关节限制
-   - 适应显示需求
-
-**质量控制：**
-
-1. 输入验证
-   - 数据完整性检查
-   - 格式兼容性验证
-   - 数值范围检查
-
-2. 处理监控
-   - 标准化过程日志
-   - 异常值检测
-   - 性能指标跟踪
-
-3. 结果验证
-   - 标准化效果评估
-   - 数据一致性检查
-   - 视觉质量验证
 
 #### 3. PoseEvaluation
 动作评估和分析模块
